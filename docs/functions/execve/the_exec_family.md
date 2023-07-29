@@ -1,0 +1,12 @@
+- *execl*
+- *execle*	Similar to execl but allows you to specify an environment for the new process.
+- *execlp*	Similar to execl but instead of taking an absolute path, it looks for the file in directories listed in the PATH environment variable.
+- *execv*i	Similar to execl but takes the arguments as array of strings
+
+- execl: the 'l' stands for 'list'
+- execle: the 'l' for 'list', the 'e' for 'environement'
+- execlp: the 'l' for 'list', the 'p' for 'path'
+- execv: the 'v' for 'vector', synonimous with 'array' in this context.
+- execvp: the 'v' for 'vector', the 'p' for 'path'
+- execvpe: vector, path, environment
+- execve: vector, environment
