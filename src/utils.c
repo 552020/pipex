@@ -9,14 +9,15 @@ void exit_with_error(const char *msg, bool is_system_error)
 		ft_putendl_fd("Error", 2);
 		ft_putendl_fd((char *)msg, 2);
 	}
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
-char *extract_path_env(char **envp)
+char	*extract_path_env(char **envp)
 {
-	int i = 0;
-	char *path_env;
+	int		i;
+	char	*path_env;
 
+	i = 0;
 	path_env = NULL;
 	while (envp[i])
 	{
@@ -28,20 +29,45 @@ char *extract_path_env(char **envp)
 		i++;
 	}
 	if (!path_env)
-	{
-		ft_putstr_fd("PATH environment variable not found\n", 2);
-		exit(1);
-	}
+		exit_with_error("PATH environment variable not found", false);
 	path_env = path_env + 5;
 	return (path_env);
 }
 
-char *extract_path(char *path_env, char *cmd)
+void free_path_dirs(char **path_dirs)
 {
-	char **path_dirs;
-	char *full_path;
-	char *tmp_path;
 	int i;
+
+	i = -1;
+	while(path_dirs[++i])
+		free(path_dirs[i]);
+	free(path_dirs);
+}
+
+
+int	check_access(char *full_path, char **path_dirs_ptr)
+{
+	int ret;
+
+	ret = access(full_path, F_OK);
+	if (ret == 0)
+		free_path_dirs(path_dirs_ptr);
+	// {
+	// 	i = -1;
+	// 	while(path_dirs_ptr[++i])
+	// 		free(path_dirs_ptr[i]);
+	// 	free(path_dirs_ptr);
+	// 	return (ret);
+	// }
+	return (ret);
+}
+
+char	*extract_path(char *path_env, char *cmd)
+{
+	char	**path_dirs;
+	char	*tmp_path;
+	char	*full_path;
+	int		i;
 
 	i = 0;
 	path_dirs = ft_split(path_env, ':');
@@ -50,21 +76,24 @@ char *extract_path(char *path_env, char *cmd)
 		tmp_path = ft_strjoin(path_dirs[i], "/");
 		full_path = ft_strjoin(tmp_path, cmd);
 		free(tmp_path);
-		if(access(full_path, F_OK) == 0)
-		{
-			i = -1;
-			while(path_dirs[++i])
-				free(path_dirs[i]);
-			free(path_dirs);
+		if (check_access(full_path, path_dirs) == 0)
 			return (full_path);
-		}
+		// if(access(full_path, F_OK) == 0)
+		// {
+		// 	i = -1;
+		// 	while(path_dirs[++i])
+		// 		free(path_dirs[i]);
+		// 	free(path_dirs);
+		// 	return (full_path);
+		// }
 		free(full_path);
 		i++;
 	}
-	i = -1;
-	while(path_dirs[++i])
-		free(path_dirs[i]);
-	free(path_dirs);
+	// i = -1;
+	// while(path_dirs[++i])
+	// 	free(path_dirs[i]);
+	// free(path_dirs);
+	free_path_dirs(path_dirs);
 	return (NULL);
 }
 
@@ -73,17 +102,14 @@ int execute_cmd1(char *infile, char *cmd1, char **envp, int *fildes)
 	char 	**cmd;
 	char	*path_env;
 	char	*path;
-	int 	infile_fildes;
+	int 	infile_fd;
 
 	close(fildes[0]);
-	infile_fildes = open(infile, O_RDONLY);
-	if (infile_fildes < 0)
-	{
-		ft_putstr_fd("Error opening input file\n", 2);
-		exit(1);
-	}
-	dup2(infile_fildes, STDIN_FILENO);
-	close(infile_fildes);
+	infile_fd = open(infile, O_RDONLY);
+	if (infile_fd < 0)
+		exit_with_error("Error opening input file\n", true);
+	dup2(infile_fd, STDIN_FILENO);
+	close(infile_fd);
 	dup2(fildes[1], STDOUT_FILENO);
 	close(fildes[1]);
 	cmd = ft_split(cmd1, ' ');
@@ -91,11 +117,11 @@ int execute_cmd1(char *infile, char *cmd1, char **envp, int *fildes)
 	path_env = extract_path_env(envp);
 	path = extract_path(path_env, cmd[0]);
 	if (!path)
-	{
-		ft_putstr_fd("Command not found\n", 2);
-		return (1);
+		exit_with_error("Command not found\n", false);
+	if (execve(path, cmd, envp) == -1) {
+    free(path);
+    exit_with_error("Error executing command\n", true);
 	}
-	execve(path, cmd, envp);
 	return (0);
 }
 
@@ -104,17 +130,17 @@ int execute_cmd2(char *outfile, char *cmd2, char **envp, int *fildes)
 	char 	**cmd;
 	char	*path_env;
 	char	*path;
-	int 	outfile_fildes;
+	int 	outfile_fd;
 
 	close(fildes[1]);
-	outfile_fildes = open(outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-	if (outfile_fildes < 0)
+	outfile_fd = open(outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (outfile_fd < 0)
 	{
 		ft_putstr_fd("Error opening output file\n", 2);
 		exit(1);
 	}
-	dup2(outfile_fildes, STDOUT_FILENO);
-	close(outfile_fildes);
+	dup2(outfile_fd, STDOUT_FILENO);
+	close(outfile_fd);
 	dup2(fildes[0], STDIN_FILENO);
 	close(fildes[0]);
 	cmd = ft_split(cmd2, ' ');
