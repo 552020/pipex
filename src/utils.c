@@ -1,5 +1,17 @@
 #include "pipex.h"
 
+void exit_with_error(const char *msg, bool is_system_error)
+{
+	if (is_system_error)
+		perror(msg);
+	else
+	{
+		ft_putendl_fd("Error", 2);
+		ft_putendl_fd((char *)msg, 2);
+	}
+	exit(1);
+}
+
 char *extract_path_env(char **envp)
 {
 	int i = 0;
@@ -32,8 +44,6 @@ char *extract_path(char *path_env, char *cmd)
 	int i;
 
 	i = 0;
-
-
 	path_dirs = ft_split(path_env, ':');
 	while(path_dirs[i])
 	{

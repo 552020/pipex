@@ -6,23 +6,14 @@ int main(int argc, char **argv, char **envp)
 	int fildes[2];
 	pid_t pid;
 	if (argc != 5)
-	{
-		ft_putstr_fd("No, no, no!\n", 2);
-		ft_putstr_fd("Usage: ./pipex file1 cmd1 cmd2 file2\n", 2);
-	}
+		exit_with_error("No, no, no!\nUsage: ./pipex file1 cmd1 cmd2 file2\n", false);
 	else
 	{
 		if(pipe(fildes) == -1)
-		{
-			ft_putstr_fd("Pipe error!\n", 2);
-			return (1);
-		}
+			exit_with_error("Pipe error!\n", false);
 		pid = fork();
 		if (pid == -1)
-		{
-			ft_putstr_fd("Fork error!\n", 2);
-			return (1);
-		}
+			exit_with_error("Fork error!\n", true);
 		if (pid == 0)
 			execute_cmd1(argv[1], argv[2], envp, fildes);
 		wait(NULL);
