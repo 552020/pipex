@@ -77,6 +77,7 @@ int execute_cmd1(char *infile, char *cmd1, char **envp, int *fildes)
 	dup2(fildes[1], STDOUT_FILENO);
 	close(fildes[1]);
 	cmd = ft_split(cmd1, ' ');
+	handle_quotes_with_space_between(&cmd);
 	path_env = extract_path_env(envp);
 	path = extract_path(path_env, cmd[0]);
 	if (!path)
@@ -107,6 +108,7 @@ int execute_cmd2(char *outfile, char *cmd2, char **envp, int *fildes)
 	dup2(fildes[0], STDIN_FILENO);
 	close(fildes[0]);
 	cmd = ft_split(cmd2, ' ');
+	handle_quotes_with_space_between(&cmd);
 	path_env = extract_path_env(envp);
 	path = extract_path(path_env, cmd[0]);
 	if (!path)
@@ -117,4 +119,57 @@ int execute_cmd2(char *outfile, char *cmd2, char **envp, int *fildes)
 	execve(path, cmd, envp);
 	return (0);
 }
+
+void remove_element_at_index(char ***arr, int index)
+{
+    int i = 0;
+    char **new_arr;
+
+    while ((*arr)[i])
+        i++;
+    new_arr = (char **)malloc(sizeof(char *) * i);
+    if (!new_arr)
+        return;
+    for (i = 0; i < index; i++)
+        new_arr[i] = (*arr)[i];
+    for (; (*arr)[i]; i++)
+        new_arr[i] = (*arr)[i + 1];
+    free(*arr);
+    *arr = new_arr;
+}
+
+
+void    handle_quotes_with_space_between(char ***arr)
+{
+    int i = 0;
+    int j;
+    char *temp;
+    char *space = " ";
+
+    while ((*arr)[i])
+    {
+        if ((*arr)[i][0] == '\'')
+        {
+            j = i;
+            while ((*arr)[j] && (*arr)[j][ft_strlen((*arr)[j]) - 1] != '\'')
+                j++;
+            while (i < j)
+            {
+                char *temp_with_space = ft_strjoin((*arr)[i], space);
+                temp = ft_strjoin(temp_with_space, (*arr)[i + 1]);
+                free(temp_with_space);
+                free((*arr)[i]);
+                (*arr)[i] = temp;
+                remove_element_at_index(arr, i + 1);  // You need to implement this function
+                j--;
+            }
+            temp = ft_substr((*arr)[i], 1, ft_strlen((*arr)[i]) - 2);
+            free((*arr)[i]);
+            (*arr)[i] = temp;
+        }
+        i++;
+    }
+}
+
+
 
